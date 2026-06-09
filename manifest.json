@@ -1,0 +1,22 @@
+{
+  "name": "GS Muanda Cams",
+  "short_name": "GSM Cams",
+  "description": "Application de gestion et inscription - GS Muanda Cams",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#d92323",
+  "theme_color": "#d92323",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://i.postimg.cc/T1WH4H4t/logo-cams.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://i.postimg.cc/T1WH4H4t/logo-cams.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
