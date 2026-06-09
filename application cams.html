@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>G.S. Muanda Cams</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="#d92323">
+    <meta name="apple-mobile-web-app-title" content="GSM Cams">
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/T1WH4H4t/logo-cams.png">
+
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/T1WH4H4t/logo-cams.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #d92323; /* Rouge Royal Fond Principal */
+            --text-light: #ffffff; /* Texte Blanc Pur */
+            --card-bg: rgba(255, 255, 255, 0.12); /* Blanc transparent moderne */
+            --input-bg: #ffffff; 
+            --input-text: #212529;
+            --success-color: #25D366;
+            --danger-color: #e63946;
+            --border-radius: 16px;
+            --header-total-height: 125px;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-light);
+            margin: 0; padding: 0;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* ÉCRAN DE DÉMARRAGE */
+        #splash-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
+            background-color: #d92323; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+        .splash-logo-container {
+            width: 140px; height: 140px; background: white;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: pulse 1.5s infinite alternate;
+            padding: 10px; box-sizing: border-box;
+        }
+        .splash-logo-img { width: 100%; height: 100%; object-fit: contain; }
+        .splash-title { font-size: 24px; font-weight: 800; margin-top: 25px; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+        .splash-loader { margin-top: 25px; width: 35px; height: 35px; border: 4px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 1s infinite linear; }
+
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* STRUCTURE FIXE EN HAUT */
+        .fixed-top-shell {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 100;
+            background-color: #d92323; box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        header { 
+            padding: 8px 20px; 
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+        }
+        header .header-logo { width: 32px; height: 32px; background: white; border-radius: 50%; padding: 2px; object-fit: contain; }
+        header h1 { margin: 0; font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        nav { display: flex; justify-content: space-around; background: rgba(0, 0, 0, 0.15); backdrop-filter: blur(10px); }
+        nav button {
+            background: none; border: none; color: rgba(255,255,255,0.65); padding: 12px 6px;
+            font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.2s; flex: 1; 
+            text-align: center; display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        nav button i { font-size: 16px; }
+        nav button:hover, nav button.active { color: var(--text-light); }
+        nav button.active { background: rgba(255,255,255,0.08); border-bottom: 3px solid white; font-weight: 700; }
+
+        /* ZONE DÉFILANTE */
+        .scrollable-content {
+            height: calc(100vh - var(--header-total-height));
+            margin-top: var(--header-total-height);
+            overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; padding-bottom: 100px; }
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: slideUp 0.3s ease; }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card {
+            background: var(--card-bg); border-radius: var(--border-radius);
+            padding: 22px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .form-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .form-table td { padding: 10px 6px; vertical-align: middle; }
+        .form-table td:first-child { width: 35%; font-weight: 600; font-size: 14px; }
+
+        input[type="text"], input[type="date"], input[type="tel"], input[type="password"], input[type="number"], textarea, select {
+            width: 100%; padding: 12px; border: 1px solid transparent; border-radius: 8px;
+            box-sizing: border-box; font-size: 15px; background-color: var(--input-bg); color: var(--input-text);
+        }
+
+        /* Champ montant couplé à la devise */
+        .amount-group { display: flex; gap: 8px; }
+        .amount-group input { flex: 2; }
+        .amount-group select { flex: 1; max-width: 100px; text-align: center; font-weight: bold; }
+
+        .checkbox-container { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 14px; }
+        .checkbox-container input { width: 18px; height: 18px; cursor: pointer; }
+
+        .btn-action {
+            background-color: white; color: var(--bg-main); border: none; padding: 15px; width: 100%; border-radius: 8px;
+            font-size: 16px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-action:hover { background-color: #f1f3f5; }
+
+        .news-item {
+            background: rgba(255, 255, 255, 0.15); border-radius: 12px; padding: 15px; margin-top: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .news-item h4 { margin: 0 0 8px 0; font-size: 16px; color: gold; }
+        .news-item p { margin: 0 0 12px 0; font-size: 14px; line-height: 1.4; }
+        .news-img { width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; display: block; }
+        .news-date { font-size: 11px; opacity: 0.6; display: block; text-align: right; }
+
+        .admin-pub-list { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        .admin-pub-item { background: rgba(255, 255, 255, 0.08); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .admin-pub-info { font-size: 13px; max-width: 80%; }
+        .admin-pub-info strong { color: gold; display: block; margin-bottom: 2px; }
+        .btn-del-pub { background: var(--danger-color); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .btn-del-pub:hover { background: #b51a25; }
+
+        .receipt-box {
+            background: #ffffff; color: #212529; padding: 25px; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-top: 8px dashed var(--bg-main); margin-top: 15px;
+        }
+        .receipt-title { text-align: center; font-weight: 800; text-transform: uppercase; font-size: 16px; color: var(--bg-main); margin-bottom: 5px; }
+        .receipt-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding: 8px 0; font-size: 14px; }
+
+        /* REGISTRES ADMIN */
+        .class-filter-bar { display: flex; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;
+            padding: 6px 10px; font-size: 11px; font-weight: 600; border-radius: 6px; cursor: pointer; margin-bottom: 4px;
+        }
+        .filter-btn.active, .filter-btn:hover { background: white; color: var(--bg-main); }
+
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box i { position: absolute; left: 12px; top: 14px; color: #555; font-size: 16px; }
+        .search-box input { padding-left: 40px; }
+
+        .mass-actions { display: flex; gap: 10px; margin-bottom: 15px; }
+        .btn-mass-val { background-color: var(--success-color); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 13px; }
+        .btn-mass-rej { background-color: var(--danger-color); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; font-size: 13px; }
+
+        table.admin-table { width: 100%; border-collapse: collapse; color: white; font-size: 13px; }
+        table.admin-table th, table.admin-table td { padding: 10px 8px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.15); }
+        table.admin-table th { background: rgba(0,0,0,0.15); font-weight: 700; }
+
+        .btn-valider { background: var(--success-color); color: white; border: none; padding: 5px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; margin-right: 2px; }
+        .btn-rejeter { background: var(--danger-color); color: white; border: none; padding: 5px 8px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 11px; }
+        
+        .status-badge { padding: 4px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; text-transform: uppercase; display: inline-block; }
+        .status-attente { background: #ffbc00; color: #000; }
+        .status-valide { background: var(--success-color); color: #fff; }
+        .status-rejete { background: var(--danger-color); color: #fff; }
+
+        .print-only-header, .print-only-footer { display: none; }
+
+        /* BOUTON FLOTTANT */
+        .contact-container { position: fixed; bottom: 25px; right: 25px; z-index: 999; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+        .contact-menu { display: none; flex-direction: column; gap: 10px; animation: fadeIn 0.3s ease forwards; }
+        .contact-item { display: flex; align-items: center; gap: 10px; text-decoration: none; padding: 12px 18px; border-radius: 30px; font-weight: 700; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .item-whatsapp { background-color: #25D366; color: white; }
+        .item-call { background-color: white; color: #212529; }
+        .btn-float-main { width: 56px; height: 56px; border-radius: 50%; background-color: #25D366; color: white; border: none; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+
+        /* FENÊTRES MODALES SUBLIMES */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px);
+            z-index: 10000; display: flex; align-items: center; justify-content: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-box {
+            background: #ffffff; color: #212529; width: 85%; max-width: 400px;
+            border-radius: 20px; padding: 25px; text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+            transform: scale(0.8); transition: all 0.3s ease;
+        }
+        .modal-overlay.active .modal-box { transform: scale(1); }
+        .modal-icon { width: 65px; height: 65px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto; font-size: 28px; }
+        .icon-info { background: rgba(217, 35, 35, 0.1); color: #d92323; }
+        .icon-success { background: rgba(37, 211, 102, 0.1); color: #25D366; }
+        .icon-warning { background: rgba(255, 188, 0, 0.1); color: #ffbc00; }
+        .modal-title { font-size: 18px; font-weight: 800; text-transform: uppercase; margin-bottom: 10px; color: #212529; }
+        .modal-text { font-size: 14px; color: #555; margin-bottom: 20px; line-height: 1.5; white-space: pre-line; }
+        .modal-buttons { display: flex; gap: 10px; justify-content: center; }
+        .btn-modal-confirm { background: #d92323; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
+        .btn-modal-cancel { background: #e2e8f0; color: #4a5568; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* IMPRESSION PROFESSIONNELLE */
+        @media print {
+            body { background: #ffffff !important; color: #000000 !important; overflow: visible !important; height: auto !important; }
+            .fixed-top-shell, .contact-container, #admin-auth-box, .card[style*="border: 1px solid gold;"], .search-box, .class-filter-bar, .mass-actions, #accueil, #inscription, #frais, .btn-valider, .btn-rejeter, .card button, button, .hide-on-print, .live-conversion, .modal-overlay { display: none !important; }
+            .scrollable-content { margin-top: 0 !important; height: auto !important; overflow: visible !important; }
+            #secretariat, #admin-content { display: block !important; }
+            .container { max-width: 100% !important; width: 100% !important; padding: 0 !important; margin: 0 !important; }
+            .card { background: none !important; border: none !important; padding: 0 !important; margin-bottom: 0 !important; box-shadow: none !important; }
+            
+            .print-only-header {
+                display: flex !important; align-items: center; justify-content: space-between;
+                background-color: #d92323 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;
+                padding: 15px 25px; border-radius: 8px; margin-bottom: 25px; color: #ffffff !important;
+            }
+            .print-logo { width: 55px; height: 55px; background: #ffffff !important; border-radius: 50%; padding: 4px; object-fit: contain; }
+            .print-title { text-align: center; flex: 1; }
+            .print-title h2 { margin: 0; font-size: 20px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; }
+            .print-title p { margin: 4px 0 0 0; font-size: 13px; font-weight: 600; opacity: 0.9; }
+
+            table.admin-table { width: 100% !important; color: #000000 !important; border-collapse: collapse !important; margin-top: 15px; }
+            table.admin-table th { background: #f1f3f5 !important; color: #000000 !important; border: 1px solid #cccccc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            table.admin-table td { border: 1px solid #cccccc !important; color: #000000 !important; padding: 8px !important; }
+            table.admin-table td strong { color: #000000 !important; }
+            .status-badge { border: 1px solid #000000 !important; color: #000000 !important; background: none !important; }
+            table.admin-table td a { display: none !important; }
+
+            .print-only-footer { display: flex !important; justify-content: space-between; align-items: flex-start; margin-top: 60px; font-size: 13px; padding: 0 10px; }
+            .print-signature-box { text-align: center; width: 220px; }
+            .signature-line { margin-top: 45px; border-top: 1px dashed #000000; width: 100%; }
+
+            body.printing-receipt #secretariat { display: none !important; }
+            body.printing-receipt #inscription, body.printing-receipt #step2 { display: block !important; }
+            body.printing-receipt .receipt-box { border: 1px solid #000 !important; background: #fff !important; color: #000 !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <div class="splash-logo-container">
+            <img src="https://i.postimg.cc/T1WH4H4t/logo-cams.png" alt="Logo GSM Cams" class="splash-logo-img">
+        </div>
+        <div class="splash-title">G.S. Muanda Cams</div>
+        <div class="splash-loader"></div>
+    </div>
+
+    <div class="fixed-top-shell">
+        <header>
+            <img src="https://i.postimg.cc/T1WH4H4t/logo-cams.png" alt="Logo" class="header-logo">
+            <h1>G.S. Muanda Cams</h1>
+        </header>
+        <nav>
+            <button class="nav-btn active" onclick="switchPage('accueil')"><i class="fa-solid fa-bullhorn"></i>Nouvelles</button>
+            <button class="nav-btn" onclick="switchPage('inscription')"><i class="fa-solid fa-user-plus"></i>Inscription</button>
+            <button class="nav-btn" onclick="switchPage('frais')"><i class="fa-solid fa-money-bill-wave"></i>Frais</button>
+            <button class="nav-btn" onclick="switchPage('secretariat')"><i class="fa-solid fa-lock"></i>Admin</button>
+        </nav>
+    </div>
+
+    <div class="scrollable-content" id="scrollContainer">
+        <div class="container">
+
+            <div id="accueil" class="page-section active">
+                <h2><i class="fa-solid fa-bullhorn"></i> Communiqués Officiels</h2>
+                <div class="card" style="text-align: center; background: rgba(255,255,255,0.2);">
+                    <h3 style="margin: 0; color: gold;"><i class="fa-solid fa-star"></i> Année Scolaire 2026-2027 <i class="fa-solid fa-star"></i></h3>
+                    <p style="margin: 5px 0 0 0; font-weight: bold; font-size: 15px;">L'inscription en ligne est 100% Gratuite !</p>
+                    <p style="margin: 3px 0 0 0; font-size: 12px; opacity: 0.9;">Taux de change fixé à l'école : 1 $ = 2.600 FC</p>
+                </div>
+                <div id="flux-communiques"></div>
+            </div>
+
+            <div id="inscription" class="page-section">
+                <h2><i class="fa-solid fa-id-card"></i> Formulaire d'Inscription</h2>
+                
+                <div id="step1">
+                    <div class="card">
+                        <table class="form-table">
+                            <tr>
+                                <td><label for="nom">Nom :</label></td>
+                                <td><input type="text" id="nom" required placeholder="Ex: MUKENDI" style="text-transform: uppercase;"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="postnom">Post-nom :</label></td>
+                                <td><input type="text" id="postnom" required placeholder="Ex: TSHILUMBA" style="text-transform: uppercase;"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="prenom">Prénom :</label></td>
+                                <td><input type="text" id="prenom" required placeholder="Ex: Jean-Luc"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="naissance">Date de Naissance :</label></td>
+                                <td><input type="date" id="naissance" required></td>
+                            </tr>
+                            <tr>
+                                <td><label for="sexe">Sexe :</label></td>
+                                <td>
+                                    <select id="sexe" required>
+                                        <option value="M">Masculin (M)</option>
+                                        <option value="F">Féminin (F)</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="classe">Classe & Option :</label></td>
+                                <td>
+                                    <select id="classe" required>
+                                        <optgroup label="Cycle Maternelle">
+                                            <option value="1ère Maternelle">1ère Maternelle</option>
+                                            <option value="2ème Maternelle">2ème Maternelle</option>
+                                            <option value="3ème Maternelle">3ème Maternelle</option>
+                                        </optgroup>
+                                        <optgroup label="Cycle Primaire">
+                                            <option value="1ère Primaire">1ère Primaire</option>
+                                            <option value="2ème Primaire">2ème Primaire</option>
+                                            <option value="3ème Primaire">3ème Primaire</option>
+                                            <option value="4ème Primaire">4ème Primaire</option>
+                                            <option value="5ème Primaire">5ème Primaire</option>
+                                            <option value="6ème Primaire">6ème Primaire</option>
+                                        </optgroup>
+                                        <optgroup label="Éducation de Base (Secondaire)">
+                                            <option value="1ère EB (7ème)">1ère EB (7ème)</option>
+                                            <option value="2ème EB (8ème)">2ème EB (8ème)</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Sciences">
+                                            <option value="3ème Sciences">3ème Sciences</option>
+                                            <option value="4ème Sciences">4ème Sciences</option>
+                                            <option value="5ème Sciences">5ème Sciences</option>
+                                            <option value="6ème Sciences">6ème Sciences</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Littéraire">
+                                            <option value="3ème Littéraire">3ème Littéraire</option>
+                                            <option value="4ème Littéraire">4ème Littéraire</option>
+                                            <option value="5ème Littéraire">5ème Littéraire</option>
+                                            <option value="6ème Littéraire">6ème Littéraire</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Pédagogie Générale">
+                                            <option value="3ème Pédagogie">3ème Pédagogie Générale</option>
+                                            <option value="4ème Pédagogie">4ème Pédagogie Générale</option>
+                                            <option value="5ème Pédagogie">5ème Pédagogie Générale</option>
+                                            <option value="6ème Pédagogie">6ème Pédagogie Générale</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Commerciale et Gestion">
+                                            <option value="3ème Commerciale">3ème Commerciale & Gestion</option>
+                                            <option value="4ème Commerciale">4ème Commerciale & Gestion</option>
+                                            <option value="5ème Commerciale">5ème Commerciale & Gestion</option>
+                                            <option value="6ème Commerciale">6ème Commerciale & Gestion</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Coupe et Couture">
+                                            <option value="3ème Couture">3ème Coupe & Couture</option>
+                                            <option value="4ème Couture">4ème Coupe & Couture</option>
+                                            <option value="5ème Couture">5ème Coupe & Couture</option>
+                                            <option value="6ème Couture">6ème Coupe & Couture</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Mécanique Générale">
+                                            <option value="3ème Mécanique">3ème Mécanique Générale</option>
+                                            <option value="4ème Mécanique">4ème Mécanique Générale</option>
+                                            <option value="5ème Mécanique">5ème Mécanique Générale</option>
+                                            <option value="6ème Mécanique">6ème Mécanique Générale</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Électricité">
+                                            <option value="3ème Électricité">3ème Électricité</option>
+                                            <option value="4ème Électricité">4ème Électricité</option>
+                                            <option value="5ème Électricité">5ème Électricité</option>
+                                            <option value="6ème Électricité">6ème Électricité</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Électronique">
+                                            <option value="3ème Électronique">3ème Électronique</option>
+                                            <option value="4ème Électronique">4ème Électronique</option>
+                                            <option value="5ème Électronique">5ème Électronique</option>
+                                            <option value="6ème Électronique">6ème Électronique</option>
+                                        </optgroup>
+                                        <optgroup label="Humanités : Construction">
+                                            <option value="3ème Construction">3ème Construction</option>
+                                            <option value="4ème Construction">4ème Construction</option>
+                                            <option value="5ème Construction">5ème Construction</option>
+                                            <option value="6ème Construction">6ème Construction</option>
+                                        </optgroup>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><label for="adresse">Adresse :</label></td>
+                                <td><input type="text" id="adresse" required placeholder="N°45, Av. de la Libération"></td>
+                            </tr>
+                            <tr>
+                                <td><label for="tel">Téléphone Parent :</label></td>
+                                <td><input type="tel" id="tel" required placeholder="0815187095"></td>
+                            </tr>
+                        </table>
+                        <button type="button" class="btn-action" onclick="validerInscriptionGratuite()"><i class="fa-solid fa-circle-check"></i> Confirmer l'Inscription (Gratuit)</button>
+                    </div>
+                </div>
+
+                <div id="step2" style="display: none;">
+                    <div class="card">
+                        <div class="receipt-box" id="receiptPrintable">
+                            <div class="receipt-title">Bordereau d'Inscription</div>
+                            <div style="text-align: center; font-size: 11px; margin-bottom: 15px; font-weight: bold; color: #212529;">G.S. MUANDA CAMS (2026-2027)</div>
+                            <div class="receipt-row" style="background: #f1f3f5; padding: 10px 5px; border-radius: 6px;">
+                                <span style="font-weight: 800; color: var(--bg-main);">N° MATRICULE ATTRIBUÉ :</span>
+                                <span id="rec-matricule" style="font-weight: 900; font-size: 16px; letter-spacing: 1px;">-</span>
+                            </div>
+                            <div class="receipt-row"><span>Date :</span><span id="rec-date">-</span></div>
+                            <div class="receipt-row"><span>Élève :</span><span id="rec-eleve" style="text-transform: uppercase; font-weight: bold;">-</span></div>
+                            <div class="receipt-row"><span>Classe retenue :</span><span id="rec-classe">-</span></div>
+                            <div class="receipt-row"><span>Frais Inscription :</span><span style="color:var(--success-color); font-weight: bold;">GRATUIT</span></div>
+                            <div class="receipt-row"><span>Statut :</span><span id="rec-status-badge">-</span></div>
+                        </div>
+                        <button class="btn-action" style="margin-top: 15px; background-color: #212529; color: white;" onclick="imprimerRecu()"><i class="fa-solid fa-print"></i> Imprimer le Bordereau</button>
+                        <button class="btn-action" style="margin-top: 10px; background-color: gold; color: black;" onclick="redirigerVersFrais()"><i class="fa-solid fa-money-bill-wave"></i> Passer au paiement de l'Acompte</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="frais" class="page-section">
+                <h2><i class="fa-solid fa-money-bill-wave"></i> Paiement des Frais Scolaires</h2>
+                <div class="card">
+                    <table class="form-table">
+                        <tr>
+                            <td><label for="frais-matricule">N° Matricule Élève :</label></td>
+                            <td><input type="number" id="frais-matricule" placeholder="Ex: 20264852" oninput="rechercherElevePourFrais()"></td>
+                        </tr>
+                        <tr id="row-frais-nom-verif" style="display:none; background: rgba(255,255,255,0.1);">
+                            <td>Élève détecté :</td>
+                            <td><strong id="frais-nom-verif" style="color: gold;">-</strong></td>
+                        </tr>
+                        <tr>
+                            <td><label for="frais-type">Type de Versement :</label></td>
+                            <td>
+                                <select id="frais-type">
+                                    <option value="Acompte">Acompte (Garantie de place)</option>
+                                    <option value="2e Tranche">2e Tranche</option>
+                                    <option value="Totalité">Totalité des frais</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="frais-montant">Montant à verser :</label></td>
+                            <td>
+                                <div class="amount-group">
+                                    <input type="number" id="frais-montant" placeholder="Montant..." oninput="calculerConversionTaux()">
+                                    <select id="frais-devise" onchange="calculerConversionTaux()">
+                                        <option value="USD">USD ($)</option>
+                                        <option value="CDF">CDF (Fc)</option>
+                                    </select>
+                                </div>
+                                <div id="conversion-preview" class="live-conversion" style="font-size: 13px; color: gold; margin-top: 6px; font-weight: bold; display: none;"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="frais-momo">N° Mobile Money :</label></td>
+                            <td><input type="tel" id="frais-momo" placeholder="081XXXXXXX"></td>
+                        </tr>
+                    </table>
+                    <button class="btn-action" style="background-color: var(--success-color); color: white;" onclick="executerPaiementFrais()"><i class="fa-solid fa-bolt"></i> Confirmer via Mobile Money</button>
+                </div>
+            </div>
+
+            <div id="secretariat" class="page-section">
+                <h2><i class="fa-solid fa-shield-halved"></i> Espace Administratif</h2>
+                
+                <div id="admin-auth-box" class="card">
+                    <h3><i class="fa-solid fa-key"></i> Clé de Secrétariat</h3>
+                    <div style="margin: 15px 0;">
+                        <input type="password" id="adminCodeField" placeholder="Code secret..." autocomplete="off">
+                    </div>
+                    <button class="btn-action" onclick="verifierCodeAdmin()"><i class="fa-solid fa-unlock-keyhole"></i> Déverrouiller</button>
+                </div>
+
+                <div id="admin-content" style="display: none;">
+                    
+                    <div class="print-only-header">
+                        <img src="https://i.postimg.cc/T1WH4H4t/logo-cams.png" class="print-logo" alt="Logo">
+                        <div class="print-title">
+                            <h2>Groupe Scolaire Muanda Cams</h2>
+                            <p>Registre Officiel des Inscriptions — Classe : <span id="printFiliereNom">1ère Maternelle</span></p>
+                        </div>
+                        <img src="https://i.postimg.cc/T1WH4H4t/logo-cams.png" class="print-logo" alt="Logo">
+                    </div>
+
+                    <div class="card" style="background: rgba(0, 0, 0, 0.2); border: 1px solid gold;">
+                        <h3 style="margin-top:0; color:gold;"><i class="fa-solid fa-pen-to-square"></i> Publier un communiqué</h3>
+                        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom: 20px;">
+                            <input type="text" id="pub-titre" placeholder="Titre">
+                            <textarea id="pub-texte" rows="2" placeholder="Message..."></textarea>
+                            <input type="file" id="pub-image" accept="image/*" style="background: white; color: black; border-radius: 6px; padding: 5px;">
+                            <button class="btn-action" style="background-color: gold; color: black;" onclick="ajouterCommuniqueSecrétaire()"><i class="fa-solid fa-bullhorn"></i> Mettre en ligne</button>
+                        </div>
+                        <div class="admin-pub-list" id="adminPubContainer"></div>
+                    </div>
+
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="searchAdminField" oninput="rafraichirTableauAdmin()" placeholder="Rechercher par nom ou matricule...">
+                    </div>
+
+                    <h4 style="margin: 10px 0 5px 0;"><i class="fa-solid fa-filter"></i> Sélectionner le niveau à afficher/imprimer :</h4>
+                    
+                    <div class="class-filter-bar">
+                        <button class="filter-btn active" onclick="filtrerParClasse('1ère Maternelle')">1ère Mat</button>
+                        <button class="filter-btn" onclick="filtrerParClasse('2ème Maternelle')">2ème Mat</button>
+                        <button class="filter-btn" onclick="filtrerParClasse('3ème Maternelle')">3ème Mat</button>
+                        
+                        <button class="filter-btn" onclick="filtrerParClasse('1ère Primaire')">1ère Prim</button>
+                        <button class="filter-btn" onclick="filtrerParClasse('2ème Primaire')">2ème Prim</button>
+                        <button class="filter-btn" onclick="filtrerParClasse('3ème Primaire')">3ème Prim</button>
+                        <button class="filter-btn" onclick="filtrerParClasse('4ème Primaire')">4ème Prim</button>
+                        <button class="filter-btn" onclick="filtrerParClasse('5ème Primaire')">5ème Prim</button>
+                        <button class="filter-btn" onclick="filtrerParClasse('6ème Primaire')">6ème Prim</button>
+
+                        <button class="filter-btn" onclick="filtrerParClasse('1ère EB (7ème)')">1ère EB (7e)</button>
+                        <button class="filter-btn" onclick="filtrerParClasse('2ème EB (8ème)')">2ème EB (8e)</button>
+
+                        <button class="filter-btn" onclick="filtrerParOption('Sciences')">Sc. (3-6)</button>
+                        <button class="filter-btn" onclick="filtrerParOption('Littéraire')">Lit. (3-6)</button>
+                        <button class="filter-btn" onclick="filtrerParOption('Pédagogie')">Péd. (3-6)</button>
+                        <button class="filter-btn" onclick="filtrerParOption('Commerciale')">Comm. (3-6)</button>
+                        <button class="filter-btn" onclick="filtrerParOption('Couture')">Cout. (3-6)</button>
+                        <button class="filter-btn" onclick="filtrerParOption('Mécanique')">Méc. (3-6)</button>
+                        <button class="filter-btn" onclick="filtrerParOption('Électricité')">Élec. (3-6)</button>
+                        <button class="filter-btn" onclick="filtrerParOption('Électronique')">Électro. (3-6)</button>
+                        <button class="filter-btn" onclick="filtrerParOption('Construction')">Const. (3-6)</button>
+                    </div>
+
+                    <div class="mass-actions">
+                        <button class="btn-mass-val" onclick="modifierStatutEnMasse('valider')"><i class="fa-solid fa-check-double"></i> Valider la liste</button>
+                        <button class="btn-mass-rej" onclick="modifierStatutEnMasse('rejeter')"><i class="fa-solid fa-trash-can"></i> Refuser la liste</button>
+                    </div>
+
+                    <div class="card" style="background: rgba(0,0,0,0.1); border-left:4px solid white;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap:10px;">
+                            <div>Filière active : <strong id="nomClasseAffichee">1ère Maternelle</strong> | Effectif : <strong id="compteurClasse">0</strong></div>
+                            <button onclick="window.print()" style="padding: 8px 15px; border-radius:6px; border:none; font-weight:700; cursor:pointer;"><i class="fa-solid fa-print"></i> Imprimer cette liste propre</button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="padding:10px; overflow-x:auto;">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Matricule</th>
+                                    <th>Nom Complet</th>
+                                    <th>Classe Actuelle</th>
+                                    <th>Frais Payés (USD)</th>
+                                    <th>Statut</th>
+                                    <th style="width: 120px;" class="hide-on-print">Décision</th>
+                                </tr>
+                            </thead>
+                            <tbody id="corpsTableauAdmin"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="print-only-footer">
+                        <div id="printDateEmplacement">Fait à Kinshasa, le --/--/----</div>
+                        <div class="print-signature-box">
+                            <strong>Sceau et Signature de la Direction</strong>
+                            <div class="signature-line"></div>
+                        </div>
+                    </div>
+
+                    <button onclick="reverrouillerAdmin()" style="background:none; border:none; color:white; font-size:13px; text-decoration:underline; cursor:pointer; margin-top:15px;"><i class="fa-solid fa-lock-open"></i> Verrouiller la session</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="customModal">
+        <div class="modal-box">
+            <div class="modal-icon" id="modalIcon"><i class="fa-solid fa-info"></i></div>
+            <div class="modal-title" id="modalTitle">Notification</div>
+            <div class="modal-text" id="modalText">Message de l'application...</div>
+            <div class="modal-buttons" id="modalButtons">
+                <button class="btn-modal-confirm" onclick="closeCustomModal(true)">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="contact-container">
+        <div class="contact-menu" id="floatingContactMenu">
+            <a href="https://wa.me/243815187095" target="_blank" class="contact-item item-whatsapp"><i class="fa-brands fa-whatsapp" style="font-size:18px;"></i> WhatsApp Support</a>
+            <a href="tel:+243815187095" class="contact-item item-call"><i class="fa-solid fa-phone" style="font-size:15px;"></i> Secrétariat (0815187095)</a>
+        </div>
+        <button class="btn-float-main" id="mainFloatBtn" onclick="toggleContactMenu()"><i class="fa-solid fa-comments"></i></button>
+    </div>
+
+    <script>
+        const TAUX_ECOLE = 2600; 
+
+        let baseEleves = JSON.parse(localStorage.getItem('GS_Muanda_Cams_Eleves')) || [
+            { id: 1, matricule: "20261102", nom: "KABAMBA", postnom: "BUKASA", prenom: "Gracia", classe: "1ère Maternelle", sexe: "F", adresse: "Limete", tel: "0815187095", statut: "Validé", typeFrais: "Acompte", montantFrais: "50" }
+        ];
+
+        let baseCommuniques = JSON.parse(localStorage.getItem('GS_Muanda_Cams_News')) || [
+            { id: 1717858800000, titre: "Inscriptions ouvertes pour 2026-2027", texte: "Le Groupe Scolaire Muanda Cams informe les parents que les enregistrements en ligne ont commencé et sont totalement gratuits.", image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=600&auto=format&fit=crop&q=60", date: "08/06/2026" }
+        ];
+
+        let classeFiltreActuelle = "1ère Maternelle";
+        let modeFiltreOptionGlobal = false;
+        let isAdminAuthentified = false;
+        let dernierMatriculeGenere = "";
+        const SECRET_KEY_HASH = "1234";
+
+        let activeCallback = null;
+
+        function showCustomModal(title, text, type = 'info', hasCancel = false, callback = null) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalText').innerText = text;
+            
+            let iconDiv = document.getElementById('modalIcon');
+            iconDiv.className = "modal-icon"; 
+            
+            if (type === 'success') {
+                iconDiv.classList.add('icon-success');
+                iconDiv.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            } else if (type === 'warning') {
+                iconDiv.classList.add('icon-warning');
+                iconDiv.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                iconDiv.classList.add('icon-info');
+                iconDiv.innerHTML = '<i class="fa-solid fa-circle-info"></i>';
+            }
+
+            let btnContainer = document.getElementById('modalButtons');
+            if (hasCancel) {
+                btnContainer.innerHTML = `
+                    <button class="btn-modal-cancel" onclick="closeCustomModal(false)">Annuler</button>
+                    <button class="btn-modal-confirm" onclick="closeCustomModal(true)">Confirmer</button>
+                `;
+            } else {
+                btnContainer.innerHTML = `<button class="btn-modal-confirm" onclick="closeCustomModal(true)">OK</button>`;
+            }
+
+            activeCallback = callback;
+            document.getElementById('customModal').classList.add('active');
+        }
+
+        function closeCustomModal(confirmed = true) {
+            document.getElementById('customModal').classList.remove('active');
+            if (activeCallback) {
+                activeCallback(confirmed);
+                activeCallback = null;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+            rafraichirFluxCommuniques();
+            mettreAjourDateImpression();
+            setTimeout(function() {
+                const splash = document.getElementById('splash-screen');
+                splash.style.opacity = '0';
+                setTimeout(function() { splash.style.display = 'none'; }, 500);
+            }, 1500);
+        });
+
+        function enregistrerDansLeNavigateur() { localStorage.setItem('GS_Muanda_Cams_Eleves', JSON.stringify(baseEleves)); }
+        function toggleContactMenu() { const menu = document.getElementById('floatingContactMenu'); menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex'; }
+
+        function mettreAjourDateImpression() {
+            let j = new Date();
+            let format = String(j.getDate()).padStart(2, '0') + '/' + String(j.getMonth() + 1).padStart(2, '0') + '/' + j.getFullYear();
+            document.getElementById('printDateEmplacement').innerText = `Fait à Kinshasa, le ${format}`;
+        }
+
+        function switchPage(pageId) {
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            if(window.event) window.event.currentTarget.classList.add('active');
+            if(pageId === 'secretariat') verifierSessionAdmin();
+        }
+
+        function verifierSessionAdmin() {
+            const authBox = document.getElementById('admin-auth-box');
+            const contentBox = document.getElementById('admin-content');
+            if (isAdminAuthentified) { 
+                authBox.style.display = 'none'; contentBox.style.display = 'block'; 
+                rafraichirTableauAdmin(); rafraichirGestionPublications(); 
+            } else { authBox.style.display = 'block'; contentBox.style.display = 'none'; }
+        }
+
+        function verifierCodeAdmin() { 
+            if (document.getElementById('adminCodeField').value === SECRET_KEY_HASH) { 
+                isAdminAuthentified = true; 
+                verifierSessionAdmin(); 
+            } else { 
+                showCustomModal("Accès Refusé", "Clé de secrétariat erronée ou inconnue !", "warning");
+            } 
+        }
+        
+        function reverrouillerAdmin() { isAdminAuthentified = false; verifierSessionAdmin(); }
+
+        function rafraichirFluxCommuniques() {
+            let htmlFlux = "";
+            let comsInverses = [...baseCommuniques].reverse();
+            comsInverses.forEach(c => {
+                htmlFlux += `<div class="news-item"><h4>📢 ${c.titre}</h4><p>${c.texte}</p>${c.image ? `<img src="${c.image}" class="news-img">` : ''}<span class="news-date">Publié le ${c.date}</span></div>`;
+            });
+            document.getElementById('flux-communiques').innerHTML = htmlFlux;
+        }
+
+        function rafraichirGestionPublications() {
+            let htmlList = "";
+            let comsInverses = [...baseCommuniques].reverse();
+            comsInverses.forEach(c => {
+                htmlList += `<div class="admin-pub-item"><div><strong>${c.titre}</strong></div><button class="btn-del-pub" onclick="supprimerCommunique(${c.id})"><i class="fa-solid fa-trash"></i></button></div>`;
+            });
+            document.getElementById('adminPubContainer').innerHTML = htmlList;
+        }
+
+        function supprimerCommunique(id) {
+            showCustomModal("Suppression", "Voulez-vous vraiment retirer ce communiqué du flux public ?", "warning", true, function(conf) {
+                if(conf) {
+                    baseCommuniques = baseCommuniques.filter(c => c.id !== id);
+                    localStorage.setItem('GS_Muanda_Cams_News', JSON.stringify(baseCommuniques));
+                    rafraichirFluxCommuniques(); rafraichirGestionPublications();
+                }
+            });
+        }
+
+        function ajouterCommuniqueSecrétaire() {
+            let titre = document.getElementById('pub-titre').value.trim();
+            let texte = document.getElementById('pub-texte').value.trim();
+            let imageFile = document.getElementById('pub-image').files[0];
+            if(!titre || !texte) return;
+
+            let dateDuJour = new Date();
+            let dateFormatee = String(dateDuJour.getDate()).padStart(2, '0') + '/' + String(dateDuJour.getMonth() + 1).padStart(2, '0') + '/' + dateDuJour.getFullYear();
+
+            const proceder = function(img) {
+                baseCommuniques.push({ id: Date.now(), titre: titre, texte: texte, image: img, date: dateFormatee });
+                localStorage.setItem('GS_Muanda_Cams_News', JSON.stringify(baseCommuniques));
+                rafraichirFluxCommuniques(); rafraichirGestionPublications();
+                document.getElementById('pub-titre').value = ""; document.getElementById('pub-texte').value = ""; document.getElementById('pub-image').value = "";
+                showCustomModal("Succès", "Le communiqué est maintenant en ligne !", "success");
+            };
+            if(imageFile) { let r = new FileReader(); r.onloadend = function() { proceder(r.result); }; r.readAsDataURL(imageFile); } else { proceder(""); }
+        }
+
+        function validerInscriptionGratuite() {
+            const nom = document.getElementById('nom').value.trim().toUpperCase();
+            const postnom = document.getElementById('postnom').value.trim().toUpperCase();
+            const prenom = document.getElementById('prenom').value.trim();
+            const classe = document.getElementById('classe').value;
+            const adresse = document.getElementById('adresse').value.trim();
+            const sexe = document.getElementById('sexe').value;
+            const tel = document.getElementById('tel').value.trim();
+
+            if (!nom || !postnom || !prenom) { 
+                showCustomModal("Champs manquants", "Veuillez remplir l'identité complète de l'élève.", "warning"); 
+                return; 
+            }
+
+            let matricule = "2026" + String(Math.floor(1000 + Math.random() * 9000));
+            dernierMatriculeGenere = matricule;
+
+            let dateDuJour = new Date();
+            let dateFormatee = String(dateDuJour.getDate()).padStart(2, '0') + '/' + String(dateDuJour.getMonth() + 1).padStart(2, '0') + '/' + dateDuJour.getFullYear();
+
+            baseEleves.push({ id: Date.now(), matricule: matricule, nom: nom, postnom: postnom, prenom: prenom, classe: classe, sexe: sexe, adresse: adresse, tel: tel, statut: "En Attente", typeFrais: "Aucun", montantFrais: "0" });
+            enregistrerDansLeNavigateur();
+
+            document.getElementById('rec-matricule').innerText = matricule;
+            document.getElementById('rec-date').innerText = dateFormatee;
+            document.getElementById('rec-eleve').innerText = `${nom} ${postnom} ${prenom}`;
+            document.getElementById('rec-classe').innerText = classe;
+            
+            let badgeHTML = `<span class="status-badge status-attente"><i class="fa-solid fa-clock"></i> En attente d'acompte</span>`;
+            document.getElementById('rec-status-badge').innerHTML = badgeHTML;
+
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+        }
+
+        function redirigerVersFrais() {
+            document.getElementById('frais-matricule').value = dernierMatriculeGenere;
+            rechercherElevePourFrais();
+            document.getElementById('step2').style.display = 'none'; document.getElementById('step1').style.display = 'block';
+            switchPage('frais');
+        }
+
+        function rechercherElevePourFrais() {
+            let mat = document.getElementById('frais-matricule').value.trim();
+            let el = baseEleves.find(e => e.matricule === mat);
+            if(el) { document.getElementById('frais-nom-verif').innerText = `${el.nom} ${el.prenom} (${el.classe})`; document.getElementById('row-frais-nom-verif').style.display = "table-row"; } 
+            else { document.getElementById('row-frais-nom-verif').style.display = "none"; }
+        }
+
+        function calculerConversionTaux() {
+            let montant = parseFloat(document.getElementById('frais-montant').value.trim());
+            let toggleDevise = document.getElementById('frais-devise').value;
+            let preview = document.getElementById('conversion-preview');
+
+            if (isNaN(montant) || montant <= 0) {
+                preview.style.display = "none";
+                return;
+            }
+
+            if (toggleDevise === "CDF") {
+                let equivalentUSD = (montant / TAUX_ECOLE).toFixed(2);
+                preview.innerText = `≈ ${equivalentUSD} $ USD (Au taux de 2.600 Fc)`;
+                preview.style.display = "block";
+            } else {
+                let equivalentCDF = (montant * TAUX_ECOLE).toLocaleString('fr-FR');
+                preview.innerText = `≈ ${equivalentCDF} FC (Au taux de 2.600 Fc)`;
+                preview.style.display = "block";
+            }
+        }
+
+        function executerPaiementFrais() {
+            let mat = document.getElementById('frais-matricule').value.trim();
+            let type = document.getElementById('frais-type').value;
+            let montantSaisi = parseFloat(document.getElementById('frais-montant').value.trim());
+            let toggleDevise = document.getElementById('frais-devise').value;
+            
+            if(!mat || isNaN(montantSaisi) || montantSaisi <= 0) { 
+                showCustomModal("Erreur", "Veuillez saisir un montant valide s'il vous plaît.", "warning"); 
+                return; 
+            }
+            let el = baseEleves.find(e => e.matricule === mat);
+            if(!el) { 
+                showCustomModal("Introuvable", "Le numéro matricule est introuvable dans le système.", "warning"); 
+                return; 
+            }
+
+            let montantEnUSD = (toggleDevise === "CDF") ? parseFloat((montantSaisi / TAUX_ECOLE).toFixed(2)) : montantSaisi;
+
+            el.typeFrais = type;
+            el.montantFrais = String(parseFloat(el.montantFrais) + montantEnUSD);
+            el.statut = "Validé"; 
+            
+            enregistrerDansLeNavigateur();
+
+            showCustomModal(
+                "Paiement Initié", 
+                `Paiement de ${montantSaisi} ${toggleDevise} pris en compte (${montantEnUSD} $ USD enregistrés).\n\nUne demande de validation PIN a été envoyée sur votre téléphone.`, 
+                "success",
+                false,
+                function() {
+                    document.getElementById('frais-montant').value = "";
+                    document.getElementById('conversion-preview').style.display = "none";
+                    switchPage('accueil');
+                }
+            );
+        }
+
+        function channels() {}
+        function imprimerRecu() { document.body.classList.add('printing-receipt'); window.print(); document.body.classList.remove('printing-receipt'); }
+        function changerStatutEleve(id, action) { let eleve = baseEleves.find(e => e.id === id); if(eleve) { eleve.statut = (action === 'valider') ? "Validé" : "Non Validé"; enregistrerDansLeNavigateur(); rafraichirTableauAdmin(); } }
+
+        function filtrerParClasse(classe) { modeFiltreOptionGlobal = false; classeFiltreActuelle = classe; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); if(window.event) window.event.currentTarget.classList.add('active'); rafraichirTableauAdmin(); }
+        function filtrerParOption(optionKeyword) { modeFiltreOptionGlobal = true; classeFiltreActuelle = optionKeyword; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); if(window.event) window.event.currentTarget.classList.add('active'); rafraichirTableauAdmin(); }
+
+        function modifierStatutEnMasse(action) {
+            let elevesAmodifier = baseEleves.filter(e => {
+                if(modeFiltreOptionGlobal) return e.classe.includes(classeFiltreActuelle);
+                return e.classe === classeFiltreActuelle;
+            });
+            if(elevesAmodifier.length === 0) return;
+
+            showCustomModal("Action en masse", "Appliquer ce changement de statut à tous les élèves sélectionnés sur cette liste ?", "warning", true, function(conf) {
+                if(conf) {
+                    elevesAmodifier.forEach(e => e.statut = (action === 'valider') ? "Validé" : "Non Validé");
+                    enregistrerDansLeNavigateur(); rafraichirTableauAdmin();
+                }
+            });
+        }
+
+        function rafraichirTableauAdmin() {
+            if(!isAdminAuthentified) return;
+            let label = modeFiltreOptionGlobal ? `Toutes les Humanités ${classeFiltreActuelle} (3e à 6e)` : classeFiltreActuelle;
+            document.getElementById('nomClasseAffichee').innerText = label;
+            document.getElementById('printFiliereNom').innerText = label;
+
+            let recherche = document.getElementById('searchAdminField').value.toLowerCase().trim();
+            
+            let elevesFiltres = baseEleves.filter(e => {
+                if(modeFiltreOptionGlobal) return e.classe.includes(classeFiltreActuelle);
+                return e.classe === classeFiltreActuelle;
+            });
+
+            if(recherche !== "") {
+                elevesFiltres = elevesFiltres.filter(e => e.nom.toLowerCase().includes(recherche) || e.matricule.includes(recherche));
+            }
+            document.getElementById('compteurClasse').innerText = elevesFiltres.length;
+            
+            let htmlTableau = "";
+            elevesFiltres.forEach(function(eleve) {
+                let badgeClass = (eleve.statut === 'Validé') ? "status-valide" : ((eleve.statut === 'Non Validé') ? "status-rejete" : "status-attente");
+                let textNotification = encodeURIComponent(`Bonjour, le G.S. Muanda Cams vous informe que le dossier de l'élève ${eleve.nom} ${eleve.prenom} (Matricule: ${eleve.matricule}) a été VALIDÉ.`);
+                htmlTableau += `
+                    <tr>
+                        <td><strong style="color:gold;">${eleve.matricule}</strong></td>
+                        <td><span style="text-transform:uppercase; font-weight:700;">${eleve.nom}</span> ${eleve.prenom}</td>
+                        <td><strong>${eleve.classe}</strong></td>
+                        <td><strong>${eleve.montantFrais} $</strong> <span style="font-size:10px; opacity:0.7;">(${eleve.typeFrais})</span></td>
+                        <td><span class="status-badge ${badgeClass}">${eleve.statut}</span></td>
+                        <td class="hide-on-print">
+                            <div style="margin-bottom:4px; display:flex; gap:2px;">
+                                <button class="btn-valider" onclick="changerStatutEleve(${eleve.id}, 'valider')"><i class="fa-solid fa-check"></i></button>
+                                <button class="btn-rejeter" onclick="changerStatutEleve(${eleve.id}, 'rejeter')"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            ${eleve.statut === 'Validé' ? `<a href="https://wa.me/243${eleve.tel}?text=${textNotification}" target="_blank" style="background:#007bff; color:white; font-size:9px; padding:3px 5px; border-radius:3px; text-decoration:none; font-weight:bold; display:inline-block;"><i class="fa-solid fa-paper-plane"></i> Notifier</a>` : ''}
+                        </td>
+                    </tr>`;
+            });
+            document.getElementById('corpsTableauAdmin').innerHTML = htmlTableau || `<tr><td colspan="6" style="text-align:center; padding:20px;">Aucun élève trouvé.</td></tr>`;
+        }
+    </script>
+</body>
+</html>
